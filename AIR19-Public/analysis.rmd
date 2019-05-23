@@ -1,0 +1,301 @@
+---
+title: "analysis"
+author: "Brendan J. Dugan"
+date: "5/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(lubridate)
+library(tidytext)
+library(tidyr)
+library(tibble)
+library(knitr)
+
+golden <- function(x) {x * .6180339} # golden ratio, for controlling image sizes.
+jobs <- readRDS("data/jobs_clean_merged.rds")
+salary <- readRDS("data/salary.rds")
+
+
+# for an easier time repeating this.
+# # MAYBE keep playing around with alpa, jitter, and check_overlap to see if I can optimize n of words shwoing while also showing which belong in which
+plotter <- function(data, group, label, type = "_duties") { 
+  p <- data %>% 
+    filter(salary_range == group)
+  corr <- cor.test(p$`$40-60k`, p$proportion)
+  corr <- ifelse(corr$p.value < .001, paste0(round(corr$estimate, 2), "***"), "")
+  
+  p <- ggplot(p, aes(y = proportion, x = `$40-60k`, colour = abs(`$40-60k` - proportion))) + 
+    geom_abline(color = "grey", lty = 1, slope = 1, intercept = 0) +
+    geom_jitter(alpha = .15, size = 2.5, width = .35, height = .35) + 
+    geom_text(aes(label = word), 
+              check_overlap = TRUE,
+              vjust = 1.5,
+              position = position_jitter(height = .35, width = .35), 
+    ) +
+    scale_x_continuous(labels = percent_format(), trans = "log") +
+    scale_y_continuous(labels = percent_format(), trans = "log") +
+    scale_color_gradient(
+      #limits = c(0, .1),
+      #   #          max(
+      #   # max(salary_duties[salary_duties$salary_range == group, "proportion"], na.rm = TRUE), 
+      #   # max(salary_duties[, "$40-60k"], na.rm = TRUE))),
+      low = "steelblue", 
+      high = "black", 
+      na.value = "red",
+      guide = "none", 
+    ) +
+    labs(x = "", 
+         y = "",
+         subtitle = paste("Occurrence in Salary:", label, "relative to $40,000 - $60,000"), 
+         caption = paste("r = ", corr)) + 
+    theme(panel.background = element_rect(fill = "transparent"),
+          plot.background = element_rect(fill = "transparent"),
+          panel.grid = element_blank()) #,          legend.background = element_rect("transparent"))
+  print(p) # maybe don'tneed this since I"m saving anyay
+  ggsave(paste0("plots/word_correlations", group, type, ".png"), 
+         width = 8, 
+         height = golden(8), 
+         units = "in", 
+         bg = "transparent")
+} 
+```
+
+## Introduction
+AIR facilitates career advancement through the Jobs Board[^1], which represents a central hub for opportunities sought by IR professionals and newcomers to the field. With roughly half of previous AIR Forum attendees having five or fewer years of experience, the Jobs Board not only centralizes advancement opportunities, but can be systematically used to identify requirements, salary ranges, and expectations of positions. Using data scraped from the AIR Jobs Board, this research poster illustrates trends in position openings disaggregated by location, institution level and sector, and position responsibilities and qualifications.
+
+## Data and Methods
+
+#### Data Collection
+Data were read from AIR Jobs Board table and linked descriptions every week beginning November 5th, 2018, until February 12th, 2019, spanning jobs that had been posted from `r months(min(jobs$posted_on))` 2018 until `r paste0(months(max(jobs$posted_on)), format(max(jobs$posted_on), "%d"), "th")` 2019[^2]. `R` Scripts were developed to call the `read_html()` and `html_node()` functions from the `xml2`[^3] and `rvest`[^4] packages, respectively, pointing to the HTML elements identified by the Inspect feature in Chrome (CTRL+SHIFT+I), which displays HTML and CSS code and webpage organization. Once scraped, the Jobs Board table was appended to previously scraped data; `r formatC(nrow(readRDS("data/jobs.rds")), big.mark = ",")` total posts were collected, of which `r nrow(jobs)` unique positions across `r length(unique(jobs$institution))` unique organizations were retained for analysis. The Jobs Board contained links to individual job descriptions, which were similarly scraped and appended to existing descriptions. While intended to continue through April 2019, the data collection was cut short by renovations to the AIR website.  
+
+#### Data Cleaning
+Data were cleaned primarily using functions from the `tidyverse` packages[^5], namely `dplyr`, `stringr`, `lubridate`, and `purrr`, e.g., by imposing a common format on date fields, imposing factor order on character vectors, and extracting common fields from the job description tables, which prior to the website update were allowed to vary. Where applicable, postsecondary institutional data were merged from IPEDS Institutional Characteristics survey[^6] on institution name. Given that some entities were either outside the IPEDS universe (e.g., private companies or institutions outside the U.S.) or could not directly be matched on the name provided on the Jobs Board, fuzzy matching (`base::agrep()`[^7]) was employed for `r length(readRDS("data/fuzzymatches.rds"))` of the `r length(unique(jobs$institution))` unique entities with a Levenshtein edit distance of 10% of the pattern length. Possible matches were manually reviewed and selected if correct and where applicable.  
+
+Unstructured text data collected from the linked job description pages were tokenized (reduced to individual words) and stripped of stopwords using the `tidytext` package[^8] `unnest_tokens()` function and stopwords lexicons, collections of frequently occuring words that typically add little meaning (e.g., `r set.seed(23); paste(sample(stop_words$word, 3), collapse = ", ")`). Tables of tokenized job duties, qualifications, and reporting unit texts were then nested under salary level, a set of four categories of $20,000 ranges (initially five; the lowest bin, $20,000 - $40,000, had so few cases it was justifiably collapsed into the next category) and "Dependent on Qualifications and Experience," the most common category. Proportions for word occurrence were calculated for each set of tokens and retained for analysis.  
+
+All R code and data used in this analysis are available for review and download via the author's github repository, **GITHUB!!**.
+
+## Analysis
+
+```{r Table 1, echo=FALSE}
+states <- data.frame(location = state.name, Region = state.region, 
+                     stringsAsFactors = FALSE)
+j0 <- jobs %>% 
+  left_join(states, by = "location") %>% 
+  group_by(Region) %>% 
+  count() %>% 
+  rename(Count = n) %>% 
+  ungroup() %>% 
+  mutate(Region = as.character(Region))
+j0[is.na(j0$Region), "Region"] <- "D.C. or outside U.S."
+j0$Percent <- j0$Count / sum(j0$Count) * 100 
+j0$Variable <- colnames(j0)[1]
+colnames(j0)[1] <- "Value"
+  
+
+j1 <- jobs %>% 
+  group_by(salary_range) %>% 
+  count() %>% 
+  rename(`Salary Range` = salary_range, Count = n) %>% 
+  ungroup() %>% 
+  mutate(`Salary Range` = as.character(`Salary Range`))
+j1$Percent <- j1$Count / sum(j1$Count) * 100 
+j1$Variable <- colnames(j1)[1]
+colnames(j1)[1] <- "Value"
+  
+j2 <- jobs %>% 
+  group_by(iclevel) %>% 
+  count() %>% 
+  rename(Level = iclevel, Count = n)
+j2$Percent <- j2$Count / sum(j2$Count) * 100 
+j2$Variable <- colnames(j2)[1]
+colnames(j2)[1] <- "Value"
+
+j3 <- jobs %>% 
+  group_by(control) %>% 
+  count() %>% 
+  rename(Control = control, Count = n) %>% 
+  arrange(desc(Control))
+j3$Percent <- j3$Count / sum(j3$Count) * 100 
+j3$Variable <- colnames(j3)[1]
+colnames(j3)[1] <- "Value"
+
+j4 <- jobs %>% 
+  group_by(instsize) %>% 
+  count() %>% 
+  rename(Size = instsize, Count = n) 
+j4[is.na(j4$Size), "Size"] <- "Other"
+j4$Percent <- j4$Count / sum(j4$Count) * 100 
+j4$Variable <- colnames(j4)[1]
+colnames(j4)[1] <- "Value"
+j4 <- j4[c(6, 2, 5, 3:4, 1), ]
+
+t1 <- bind_rows(j0, j1, j2, j3, j4) %>% 
+  select(Variable, Value, Count, Percent)
+
+nonblanks <- c(1, nrow(j0) + 1, nrow(j0) + nrow(j1) + 1, nrow(j0) + nrow(j1) + nrow(j2) + 1, 
+  nrow(j0) + nrow(j1) + nrow(j2) + nrow(j3) + 1)
+t1[-nonblanks, "Variable"] <- ""
+
+kable(t1, caption = "Table 1. Selected Sample Characteristics", digits = 1)
+  
+```
+
+Table 1 describes some basic characteristics of the entries scraped from the jobs board. Entries reading "Other" indicate hiring entities that either fall outside the IPEDS universe (e.g,. `r pull(slice(jobs[jobs$instnm_matched == "", "institution"], 1))`) or that could not be matched. The majority of posted positions did not list a salary range (`r paste0(round(t1[t1$Value == "Dependent on qualifications and experience", "Percent"], 1), "%")`), were available at public U.S. institions (`r paste0(round(t1[t1$Value == "Public", "Percent"], 1), "%")`), four-year institutions (`r paste0(round(t1[t1$Value == "Four or more years", "Percent"], 1), "%")`), and were concentrated in New York and California, as illustrated in Figure 1 below.
+
+## Analysis
+
+```{r geographic distribution, echo=FALSE}
+library(maps)
+states_map <- map_data("state")
+jobs %>% 
+  group_by(location) %>% 
+  count(location) %>% 
+  rename(Count = n) %>% 
+  bind_rows(tibble(location = state.name[!(state.name %in% jobs$location)], 
+                     Count = NA)) %>% 
+  ggplot(aes(map_id = tolower(location))) +
+  geom_map(aes(fill = Count), map = states_map) +
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  scale_fill_gradient(low = "lightsteelblue1", na.value = "lightgrey") +
+  labs(y = NULL, x = NULL, 
+       title = paste("Fig. 1.", nrow(jobs), "positions posted on AIR Jobs Board", 
+                     months(min(jobs$posted_on)), "2018 through", months(max(jobs$posted_on)), "2019"),
+       caption = paste("Excludes 8 positions outside the US and", 
+                       nrow(filter(jobs, location == "District of Columbia")), "in D.C.")) + 
+  theme(axis.text = element_blank(), 
+        axis.ticks = element_blank(),
+        panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"),
+        panel.grid = element_blank(),
+        legend.background = element_rect("transparent")
+        )
+
+ggsave("plots/geographic_distribution.png", width = 10, height = golden(10), 
+       units = "in", bg = "transparent")
+
+
+
+```
+
+Text data present analytic difficulty because of their unstructured nature. Yet it is possible to explore patterns in bodies of text quantitatively by counting occurrence of words or certain words. While lacking in nuance and thematic understanding provided by qualitative analysis (or, less stringently, a careful reading), a simple frequentist approach to text mining nevertheless answers questions about what a body of text holds.
+
+Position qualifications and duties text were compared between salary levels to determine how job descriptions may vary by pay grade, as one may expect, and to identify which elements were unique to each salary level.   
+The following plots illustrate the similarity in token occurrence between salary grade. In each plot, the $40,000 to $60,000 salary category (x-axis) is treated as the reference, to allow comparisons to entry-level positions.  
+Words that occur most frequently appear over plot points in the upper right corner; words below the reference line appear more frequently in the reference group (above for the comparison group). Only a limited number of words in each chart could be displayed and remain readable, thus the words appearing do not represent the whole of the texts. The darker the word, the greater the absolute difference in occurrence between groups; that is, blue words appear with similar frequencies in postings from either salary range, while black words appear at much different rates. Proportions were natural log-transformed to simplify graphical interpretation. 
+
+#### Qualifications
+```{r qualifications, echo=FALSE}
+salary_qual <- salary %>% 
+  select(salary_range, data) %>% 
+  unnest() %>% 
+  select(salary_range, word, prop_qual) %>% # including this seems to muddle the mixture (effect of spread/gather)
+  spread(salary_range, prop_qual) %>%
+  select(word, `$40,000 - $60,000`, everything()) %>% # reorder 
+  gather(salary_range, prop_qual, `Dependent on qualifications and experience`:`$100,000 and Higher`) %>% # keeps 40-60 as reference
+  mutate(salary_range = factor(salary_range, 
+                               levels = c("Dependent on qualifications and experience",
+                                          "$60,000 - $80,000", 
+                                          "$80,000 - $100,000", 
+                                          "$100,000 and Higher"),
+                               labels = c("Depends on Q&E",
+                                          "$60-80k", 
+                                          "$80-100k", 
+                                          "$100k+"))) %>% 
+  rename(`$40-60k` = `$40,000 - $60,000`,
+         proportion = prop_qual)
+
+plotter(salary_qual, "Depends on Q&E", "Dependent on Qualifications", type = "_qual")
+plotter(salary_qual, "$60-80k", "$60,000 - $80,000", type = "_qual")
+plotter(salary_qual, "$80-100k", "$80,000 - $100,000", type = "_qual")
+plotter(salary_qual, "$100k+", "$100,000 or more", type = "_qual")
+
+
+
+```
+
+
+
+
+#### Duties
+```{r duties, echo=FALSE}
+salary_duties <- salary %>% 
+  select(salary_range, data) %>% 
+  unnest() %>% 
+  select(salary_range, word, prop_salary) %>% # including this seems to muddle the mixture (effect of spread/gather)
+  spread(salary_range, prop_salary) %>%
+  select(word, `$40,000 - $60,000`, everything()) %>% # reorder 
+  gather(salary_range, prop_salary, `Dependent on qualifications and experience`:`$100,000 and Higher`) %>% # keeps 40-60 as reference
+  mutate(salary_range = factor(salary_range, 
+                               levels = c("Dependent on qualifications and experience",
+                                          "$60,000 - $80,000", 
+                                          "$80,000 - $100,000", 
+                                          "$100,000 and Higher"),
+                               labels = c("Depends on Q&E",
+                                          "$60-80k", 
+                                          "$80-100k", 
+                                          "$100k+"))) %>% 
+  rename(`$40-60k` = `$40,000 - $60,000`,
+         proportion = prop_salary)
+
+plotter(salary_duties, "Depends on Q&E", "Dependent on Qualifications")
+plotter(salary_duties, "$60-80k", "$60,000 - $80,000")
+plotter(salary_duties, "$80-100k", "$80,000 - $100,000")
+plotter(salary_duties, "$100k+", "$100,000 or more")
+
+
+```
+
+```{r Table 2, echo=FALSE}
+
+
+
+```
+
+
+
+
+Both job duties qualificitions texts were found to have strong correlations between salary levels and the reference group (*p* < .001). As one might expect, the correlations were strongest for job requirements between the $40,000-$60,000 range and the next highest as well as for the "Dependent on Qualifications" category (r = .95, *p* < .001), and slightly less so for the $80,000-$100,000 category (r = .83) and the highest salary level category (r = .68). A similar pattern held for job duties (not shown), however the correlation was slightly stronger between the $100,000+ category and reference (r = .83, *p* < .001) than for the $80,000-$100,000 category (r = .74, *p* < .001).
+
+Some words tend to appear more frequently in the entry-level position texts, including the names of analytic software or related terms ("database", "SAS", "Excel", "[Microsoft Power] BI", "SQL"), and terms likely referring to desired experience with analyzing data and sharing results ("reporting", "analy*", "communicate"). These terms tend to appear closer to the reference line in more proximal comparisons than when comparing the lower and uppermost salary grades.
+
+Generally speaking, the spread of the texts (and underlying points) tends to grow as salary grades become more distal, and distinctness (darkness) of words also grow, one would expect. Likewise, terms more associated with oversight and management ("oversee", "initiatives", "abreast [of policy, laws, etc.]", "building", "design") tend to appear more frequently above the reference line in the higher salary categories. 
+
+
+## Discussion
+```{r, echo=FALSE}
+set.seed(42)
+otherOrg <- filter(jobs, is.na(unitid)) %>% pull(institution) %>% sample(5) %>% `[`(c(1, 3))
+```
+
+By comparing texts for job listings available on the AIR Jobs Board, this research illustrated available positions and their common duties and requirements in IR and related fields. As one would expect, many entry-level positions share a number of common qualifications and duties with positions in the next-highest salary range, and fewer as pay grade rises: emphasis on software proficiencies, statistical savvy, and reporting remains high among entry-level positions, whereas management, project development, and coordination of university-wide accountability and assessment efforts appear more commonly in higher-paid positions. 
+
+Most positions available when data were collected were concentrated in California or New York at public, 4-year institutions, while fewer were available in the West, Great Plains, and parts of the South and MidWest, or at 2-year institutions or private 4-year institutions. Roughly a quarter of positions were posted by organizations other than colleges[^9], e.g., policy or research organizations or university system offices (`r paste(otherOrg, collapse = ", ")`). If these data point to larger trends, the limited geographical availability of new positions (and associated higher cost of living) could have implications for those looking to enter or advance in the field. 
+
+## Limitations
+This study was limited by a number of factors, including the relatively short time span of data and interrupted data collection (see Note 2); lack of comparison to other job boards for IR and related higher education positions (e.g., from American Educational Research Association, https://careers.aera.net/jobs/); and a lack of fine-grained salary data. This was a simpler approach and was primarily exploratory in nature, yielding a limited set of results. Further limiting interpretation is the selection of words displayed in each plot, determined by the software to prevent serious overlap. Tokenizing into ngrams instead of single words may have yielded more contextualized results. Data could have been restricted to words co-occurring at certain thresholds, but were not due to analytic constraints. 
+
+## Notes
+[^1]: https://www.airweb.org/resources-tools/job-board. 
+
+[^2]: The AIR website, including the jobs board, underwent a redesign late January that complicated data collection. E.g., for a period the jobs table was not updated and had been stripped of links; the new job board changed Salary range values by permitting any range of input instead of $20,000 ranges; the job description pages were linked to the job board differently and were structured differently as well. While data collection was intended to continue until at least April 2019, the final scrape was conducted mid-February. 
+
+[^3]: Hadley Wickham, James Hester and Jeroen Ooms (2018). xml2: Parse XML. R package version 1.2.0.  https://CRAN.R-project.org/package=xml2
+
+[^4]: Hadley Wickham (2019). rvest: Easily Harvest (Scrape) Web Pages. R package version 0.3.4. https://CRAN.R-project.org/package=rvest
+
+[^5]: Hadley Wickham (2017). tidyverse: Easily Install and Load the 'Tidyverse'. R package version 1.2.1. https://CRAN.R-project.org/package=tidyverse.
+
+[^6]: Integrated Postsecondary Education Data System Institutional Characteristics Survey. https://nces.ed.gov/ipeds/datacenter/data/HD2017.zip
+
+[^7]: R Core Team (2019). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+[^8]: Silge J, Robinson D (2016). “tidytext: Text Mining and Analysis Using Tidy Data Principles in R.”
+_JOSS_, *1*(3). doi: 10.21105/joss.00037
+
+[^9]: Or that could not be adequately matched to IPEDS INSTM variable.

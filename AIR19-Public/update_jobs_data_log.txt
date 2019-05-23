@@ -1,0 +1,150 @@
+
+2018-11-05 14:59:33
+No such file found at ./data/jobs.rds 
+Saving new data there instead. 
+Saved job descriptions as well at ./data/job_desc.rdsNULL
+Time difference of 1.495013 mins
+
+2018-11-12 17:27:44
+117 new rows added to ./data/jobs.rds 
+Modified: 2018-11-12 17:27:45 
+Created: 2018-11-05 15:01:02 248 job descriptions added to ./data/job_desc.rds 
+Modified: 2018-11-12 17:28:50 
+Created: 2018-11-05 15:01:02NULL
+
+2018-11-19 12:08:36
+126 new rows added to ./data/jobs.rds 
+Modified: 2018-11-19 12:08:37 
+Created: 2018-11-05 15:01:02 
+ 374 job descriptions added to ./data/job_desc.rds 
+Modified: 2018-11-19 12:09:41 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.082333 mins
+
+2018-11-27 11:36:42
+123 new rows added to ./data/jobs.rds 
+Modified: 2018-11-27 11:36:43 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2018-11-27 11:37:45 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.05649 mins
+
+2018-12-06 10:40:29
+134 new rows added to ./data/jobs.rds 
+Modified: 2018-12-06 10:40:30 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2018-12-06 10:41:44 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.251209 mins
+
+2018-12-13 11:01:34
+134 new rows added to ./data/jobs.rds 
+Modified: 2018-12-13 11:01:36 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2018-12-13 11:02:48 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.237298 mins
+
+2018-12-20 13:30:36
+171 new rows added to ./data/jobs.rds 
+Modified: 2018-12-20 13:30:37 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2018-12-20 13:32:32 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.935183 mins
+
+2018-12-27 14:13:04
+203 new rows added to ./data/jobs.rds 
+Modified: 2018-12-27 14:13:06 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2018-12-27 14:15:06 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 2.033693 mins
+
+2019-01-05 18:36:06
+203 new rows added to ./data/jobs.rds 
+Modified: 2019-01-05 18:36:07 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2019-01-05 18:37:53 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.786578 mins
+
+2019-01-13 23:42:57
+225 new rows added to ./data/jobs.rds 
+Modified: 2019-01-13 23:42:58 
+Created: 2018-11-05 15:01:02 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2019-01-13 23:44:51 
+Created: 2018-11-05 15:01:02NULL
+Time difference of 1.909995 mins
+
+2019-01-19 15:07:02
+New and old data collected within 5 days: 
+Modified: 2019-01-16 14:19:23 
+Created: 2019-01-16 14:19:23 
+No action taken. Consider reducing ndays parameter.Time difference of 0.173537 secs
+
+2019-01-19 15:07:38
+New and old data collected within 5 days: 
+Modified: 2019-01-16 14:19:23 
+Created: 2019-01-16 14:19:23 
+No action taken. Consider reducing ndays parameter.Time difference of 0.122673 secs
+
+2019-01-19 15:08:22
+Time difference of 0.1366339 secs
+
+2019-01-19 15:09:47
+
+2019-01-19 15:21:53
+225 new rows added to ./data/jobs.rds 
+Modified: 2019-01-19 15:21:55 
+Created: 2019-01-19 15:20:56 
+  job descriptions added to ./data/job_desc.rds 
+Modified: 2019-01-19 15:23:52 
+Created: 2019-01-15 15:01:04NULL
+Time difference of 1.971359 mins
+
+2019-01-27 14:00:49
+Called from: html_table(., header = TRUE, trim = TRUE, fill = TRUE)
+Time difference of 0.440289 secs
+
+2019-01-27 14:01:43
+Called from: html_table(., header = TRUE, trim = TRUE, fill = TRUE)
+
+2019-01-27 14:07:33
+'The interactive Job Board is temporarily unavailable due to the transition to an updated website and user portal, however, this feature should be available soon. In the interim, the current list of jobs is available below.', from https://www.airweb.org/resources-tools/job-board.
+2019-01-28 13:51:39
+Called from: html_table(., header = TRUE, trim = TRUE, fill = TRUE)
+
+2019-01-28 13:53:05
+94 new rows added to ./data/jobs.rds 
+Modified: 2019-01-28 13:53:05 
+Created: 2019-01-19 15:20:56 
+ 94 job descriptions added to ./data/job_desc.rds 
+Modified: 2019-01-28 13:53:06 
+Created: 2019-01-15 15:01:04NULL
+Time difference of 1.092049 secs
+
+2019-02-05 13:08:22
+94 new rows added to ./data/jobs.rds 
+Modified: 2019-02-05 13:08:22 
+Created: 2019-01-19 15:20:56 
+ 94 job descriptions added to ./data/job_desc.rds 
+Modified: 2019-02-05 13:08:23 
+Created: 2019-01-15 15:01:04NULL
+Time difference of 1.329473 secs
+
+2019-02-12 19:03:31
+94 new rows added to ./data/jobs.rds 
+Modified: 2019-02-12 19:03:32 
+Created: 2019-01-19 15:20:56 
+ 94 job descriptions added to ./data/job_desc.rds 
+Modified: 2019-02-12 19:03:32 
+Created: 2019-01-15 15:01:04NULL
+Time difference of 1.614499 secs
