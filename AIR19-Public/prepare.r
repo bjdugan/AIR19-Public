@@ -10,7 +10,7 @@ library(tidyr)
 library(tidytext)
 
 
-# Job Board (finished) ####
+# Job Board ####
 jb <- readRDS("data/jobs.rds")
 # import IPEDS 2017 Institutional Characterstics  and dictionary
 #https://nces.ed.gov/ipeds/datacenter/data/IC2017.zip
@@ -48,18 +48,11 @@ jb[jb$salary_range == "$20,000 - $40,000", "salary_range"] <- "$40,000 - $60,000
 jb$salary_range <- droplevels(jb$salary_range)
 
 
-# Create cleaned application due date (due_date) to be used in analysis.
+# Create cleaned application due date (due_date)
 jb$due_date <- parse_date_time(jb$application_due_date,
                                c("%m/%d/%Y", "%m/%d%y", "%B %d, %Y", "%B %d", "%d %B %Y"),
                                tz = "EST")
-cat("This captures ", round(sum(!is.na(jb$due_date)) / length(jb$due_date) * 100, 1),
-    "% of all eligible dates provided (many are given as 'Open until filled' or the like).",
-    "\nHowever some without year specified were given 2019",
-    "\nThese and those with 'Open until filled' will be given 2019-05-01.",
-    sep = "")
-plot(jb$due_date)
 jb[is.na(jb$due_date) | jb$due_date > ymd("2019-05-01"), "due_date"] <- ymd("2019-05-01")
-plot(jb$due_date)
 
 # examine locations (not all are in US), fix duplicate D.C., and fix "" missings.
 nonStates <- unique(jb$location)[!unique(jb$location) %in% state.name]
@@ -195,9 +188,6 @@ jb <- jb %>% mutate(
     INSTSIZE == 5 ~ "20,000 and above")
   )
 
-
-
-# save these data, as I really won't want to redo all that interactive data-cleaning again...
 saveRDS(jb, "data/jobs_clean.rds")
 
 # Job Descriptions ####
@@ -224,8 +214,8 @@ filler <- cbind(common, X2 = "")
 jd <- jd %>%
   modify_if(is.null, ~filler) %>% # impute filler table, which has common fields in col1, but NA in col2
   modify_if(is.logical, ~filler)
-some(jd, is.null) # clears.
-some(jd, is.logical) # clears.
+some(jd, is.null)
+some(jd, is.logical)
 rm(filler)
 
 common <- filter(common,  X1 %in% c("Posted on", "Job type", "Reports to", "Reports in office",
@@ -238,8 +228,6 @@ jd %>%
 
 jd <- jd %>%
   map(semi_join, common, by  = "X1")
-
-# Once I have the common fields narrowed down, transpose each list-element, then bind_cols to make the list a data frame, to merge with jb. I will need also extract the name of each element, as this is the ID field used in merging.
 
 jd %>% keep(map(jd, nrow) < 8) %>% length() # 14 cases don't have all 8 required fields; this turns out to be just two cases
 jd %>% keep(map(jd, nrow) < 8) %>% unique()
@@ -259,14 +247,14 @@ only6 <- cbind(common[!pull(common) %in% only6, ],
                X2 = "")
 
 # Tried getting modify_if to work correctly with bind_rows, but couldnt...instead, segregating data to work on it before putting it back together.
-jd6 <- keep(jd, map(jd, nrow) == 8)
-jd3 <- keep(jd, map(jd, nrow) == 5) %>%
+jd8 <- keep(jd, map(jd, nrow) == 8)
+jd5 <- keep(jd, map(jd, nrow) == 5) %>%
   map(bind_rows, only5)
-jd4 <- keep(jd, map(jd, nrow) == 6) %>%
+jd6 <- keep(jd, map(jd, nrow) == 6) %>%
   map(bind_rows, only6)
 
-jd <- splice(jd6, jd3, jd4)
-rm(list = c("jd6", "jd3", "jd4", "only5", "only6"))
+jd <- splice(jd8, jd5, jd6)
+rm(list = c("jd8", "jd5", "jd6", "only5", "only6"))
 
 # check that each entry has the desired 6 rows
 jd %>% map(nrow) %>% unlist() %>% mean()
@@ -286,8 +274,7 @@ allJobs <- left_join(as_tibble(jb), jd, by = "id")
 
 all(allJobs$salary_range == allJobs$`Salary range`) # There are some missing values in Salary range coming from job descriptions, so this will be dropped.
 allJobs$`Salary range` <- NULL
-allJobs$`Posted on` <- NULL # had this already, oops!
-
+allJobs$`Posted on` <- NULL # had this already
 
 # Those with links unavailable were scraped during site reconstruction, and so don't have descriptive information and will be excluded from any analysis involving that. However they still have salary and geographic data, so they are here retained.
 jobs <- allJobs %>% filter(!duplicated(job_link) | job_link == "unavailable")
@@ -414,8 +401,6 @@ reporting_office_nstd_salary <- jobs %>%
 salary <- full_join(duties_nstd_salary, qualifications_nstd_salary, by = c("word", "salary_range")) %>%
   nest() %>%
   left_join(reporting_office_nstd_salary, by = "salary_range")
-
-# NEXT steps: unnest tokens of job_title?
 
 saveRDS(salary, "data/salary.rds")
 saveRDS(jobs, "data/jobs_clean_merged.rds")

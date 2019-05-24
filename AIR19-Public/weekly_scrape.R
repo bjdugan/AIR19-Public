@@ -48,7 +48,6 @@ closeAllConnections()
 print(t2 - t1)
 cat(tail(readLines("update_jobs_data_log.txt"), n = 7), sep = "\n")
 
-# in the event of catastrophic failure, e.g., transition to new website.
 # sink("update_jobs_data_log.txt", append = T)
 # cat(paste0("\n", Sys.time(), "\n"))
 # cat(paste0("'The interactive Job Board is temporarily unavailable due to the transition to an updated website and user portal, however, this feature should be available soon. In the interim, the current list of jobs is available below.', from https://www.airweb.org/resources-tools/job-board."))

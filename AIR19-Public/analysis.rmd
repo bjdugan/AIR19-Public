@@ -22,7 +22,6 @@ salary <- readRDS("data/salary.rds")
 
 
 # for an easier time repeating this.
-# # MAYBE keep playing around with alpa, jitter, and check_overlap to see if I can optimize n of words shwoing while also showing which belong in which
 plotter <- function(data, group, label, type = "_duties") { 
   p <- data %>% 
     filter(salary_range == group)
@@ -40,10 +39,6 @@ plotter <- function(data, group, label, type = "_duties") {
     scale_x_continuous(labels = percent_format(), trans = "log") +
     scale_y_continuous(labels = percent_format(), trans = "log") +
     scale_color_gradient(
-      #limits = c(0, .1),
-      #   #          max(
-      #   # max(salary_duties[salary_duties$salary_range == group, "proportion"], na.rm = TRUE), 
-      #   # max(salary_duties[, "$40-60k"], na.rm = TRUE))),
       low = "steelblue", 
       high = "black", 
       na.value = "red",
@@ -55,8 +50,8 @@ plotter <- function(data, group, label, type = "_duties") {
          caption = paste("r = ", corr)) + 
     theme(panel.background = element_rect(fill = "transparent"),
           plot.background = element_rect(fill = "transparent"),
-          panel.grid = element_blank()) #,          legend.background = element_rect("transparent"))
-  print(p) # maybe don'tneed this since I"m saving anyay
+          panel.grid = element_blank()) 
+  print(p) 
   ggsave(paste0("plots/word_correlations", group, type, ".png"), 
          width = 8, 
          height = golden(8), 
@@ -194,7 +189,7 @@ Words that occur most frequently appear over plot points in the upper right corn
 salary_qual <- salary %>% 
   select(salary_range, data) %>% 
   unnest() %>% 
-  select(salary_range, word, prop_qual) %>% # including this seems to muddle the mixture (effect of spread/gather)
+  select(salary_range, word, prop_qual) %>% 
   spread(salary_range, prop_qual) %>%
   select(word, `$40,000 - $60,000`, everything()) %>% # reorder 
   gather(salary_range, prop_qual, `Dependent on qualifications and experience`:`$100,000 and Higher`) %>% # keeps 40-60 as reference
@@ -227,7 +222,7 @@ plotter(salary_qual, "$100k+", "$100,000 or more", type = "_qual")
 salary_duties <- salary %>% 
   select(salary_range, data) %>% 
   unnest() %>% 
-  select(salary_range, word, prop_salary) %>% # including this seems to muddle the mixture (effect of spread/gather)
+  select(salary_range, word, prop_salary) %>% 
   spread(salary_range, prop_salary) %>%
   select(word, `$40,000 - $60,000`, everything()) %>% # reorder 
   gather(salary_range, prop_salary, `Dependent on qualifications and experience`:`$100,000 and Higher`) %>% # keeps 40-60 as reference
@@ -250,14 +245,6 @@ plotter(salary_duties, "$100k+", "$100,000 or more")
 
 
 ```
-
-```{r Table 2, echo=FALSE}
-
-
-
-```
-
-
 
 
 Both job duties qualificitions texts were found to have strong correlations between salary levels and the reference group (*p* < .001). As one might expect, the correlations were strongest for job requirements between the $40,000-$60,000 range and the next highest as well as for the "Dependent on Qualifications" category (r = .95, *p* < .001), and slightly less so for the $80,000-$100,000 category (r = .83) and the highest salary level category (r = .68). A similar pattern held for job duties (not shown), however the correlation was slightly stronger between the $100,000+ category and reference (r = .83, *p* < .001) than for the $80,000-$100,000 category (r = .74, *p* < .001).
